@@ -47,12 +47,42 @@ const getAllUser = asyncHandler(async(req, res) => {
 });
 
 const getAUser = asyncHandler(async(req, res) => {
+    const { id } = req.params;
     try {
-        const getUser = await user.find();
+        const getUser = await user.findById(id);
         res.json(getUser);
     } catch(error) {
         throw new Error(error);
     }
+});
+
+const deleteAUser = asyncHandler(async(req, res) => {
+    const { id } = req.params;
+    try {
+        const deleteUser = await user.findByIdAndDelete(id);
+        res.json(deleteUser);
+    } catch(error) {
+        throw new Error(error);
+    }
+});
+
+const updateAUser = asyncHandler(async(req, res) => {
+    const {id} = req.params;
+    const findUser = await user.findById(id);
+    if (!findUser) {
+        throw new Error("User doesnot exist!");
+    }
+    try {
+        const updateUser = await user.findByIdAndUpdate(id, {
+            firstName: req?.body?.firstName,
+            lastName: req?.body?.lastName,
+            email: req?.body?.email,
+            phoneNumber: req?.body?.phoneNumber,
+        }, { new: true });
+        res.json(updateUser);
+    } catch (error) {
+        throw new Error(error);
+    }
 })
 
-module.exports = { createUser, loginUserCotroller, getAllUser, getAUser }
+module.exports = { createUser, loginUserCotroller, getAllUser, getAUser, deleteAUser, updateAUser }
