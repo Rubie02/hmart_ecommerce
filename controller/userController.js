@@ -67,13 +67,13 @@ const deleteAUser = asyncHandler(async(req, res) => {
 });
 
 const updateAUser = asyncHandler(async(req, res) => {
-    const {id} = req.params;
-    const findUser = await user.findById(id);
+    const {_id} = req.user;
+    const findUser = await user.findById(_id);
     if (!findUser) {
         throw new Error("User doesnot exist!");
     }
     try {
-        const updateUser = await user.findByIdAndUpdate(id, {
+        const updateUser = await user.findByIdAndUpdate(_id, {
             firstName: req?.body?.firstName,
             lastName: req?.body?.lastName,
             email: req?.body?.email,
@@ -83,6 +83,35 @@ const updateAUser = asyncHandler(async(req, res) => {
     } catch (error) {
         throw new Error(error);
     }
-})
+});
 
-module.exports = { createUser, loginUserCotroller, getAllUser, getAUser, deleteAUser, updateAUser }
+const blockUser = asyncHandler(async(req, res) => {
+    const { id } = req.params;
+    try {
+        const block = user.findByIdAndUpdate(id, {
+            isBLocked: true
+        }, { new: true});
+        res.json({
+            message: "User blocked!"
+        })
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+const unblockUser = asyncHandler(async(req, res) => {
+    const { id } = req.params;
+    try {
+        const unblock = user.findByIdAndUpdate(id, {
+            isBLocked: false
+        }, { new: true});
+        res.json({
+            message: "User unblocked!"
+        })
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+module.exports = { createUser, loginUserCotroller, getAllUser, 
+    getAUser, deleteAUser, updateAUser, blockUser, unblockUser }
