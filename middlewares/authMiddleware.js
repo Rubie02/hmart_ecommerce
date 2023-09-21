@@ -24,6 +24,11 @@ const authMiddleware = asyncHandler(async(req, res, next) => {
 const isAdmin = asyncHandler(async(req, res, next) => {
     const { email } = req.user;
     const adminUser = await user.findOne({ email });
+    if (!adminUser) {
+        res.status(404).json({
+            message: "You need to login with admin account!"
+        });
+    }
     if (adminUser.role !== "admin") {
         throw new Error("Not Authorization!");
     } else {
