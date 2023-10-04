@@ -39,10 +39,10 @@ const deleteBlog = asyncHandler(async (req, res) => {
 const getBlog = asyncHandler(async (req, res) => {
     const { id } = req.params;
     try {
-        const getBlog = await Blog.findById(id);
+        const getBlog = await Blog.findById(id).populate("likes").populate("dislikes");
 
         await Blog.findByIdAndUpdate(id, {
-            $inc: { numViews: 1}
+            $inc: { numViews: 1 }
         }, { new: true });
 
         res.json(getBlog);
@@ -61,10 +61,10 @@ const getBlogs = asyncHandler(async(req, res) => {
 });
 
 const liketheBlog = asyncHandler(async (req, res) => {
-    const { blogId } = req.body;
-    validateMongoDbId(blogId);
+    const { id } = req.body;
+    validateMongoDbId(id);
     // Find the blog which you want to be liked
-    const blog = await Blog.findById(blogId);
+    const blog = await Blog.findById(id);
     // find the login user
     const loginUserId = req?.user?._id;
     // find if the user has liked the blog
@@ -75,7 +75,7 @@ const liketheBlog = asyncHandler(async (req, res) => {
     );
     if (alreadyDisliked) {
       const blog = await Blog.findByIdAndUpdate(
-        blogId,
+        id,
         {
           $pull: { dislikes: loginUserId },
           isDisliked: false,
@@ -86,7 +86,7 @@ const liketheBlog = asyncHandler(async (req, res) => {
     }
     if (isLiked) {
       const blog = await Blog.findByIdAndUpdate(
-        blogId,
+        id,
         {
           $pull: { likes: loginUserId },
           isLiked: false,
@@ -96,7 +96,7 @@ const liketheBlog = asyncHandler(async (req, res) => {
       res.json(blog);
     } else {
       const blog = await Blog.findByIdAndUpdate(
-        blogId,
+        id,
         {
           $push: { likes: loginUserId },
           isLiked: true,
