@@ -1,5 +1,7 @@
 const { generateToken } = require('../config/jwtToken');
 const user = require('../models/userModel');
+const Product = require('../models/productModel');
+const Cart = require("../models/cartModel.js");
 const asyncHandler = require("express-async-handler");
 const validateMongoDbId = require('../utils/validateMongodbId');
 const { generateRefreshToken } = require('../config/refreshToken');
@@ -42,6 +44,37 @@ const loginUserCotroller = asyncHandler(async(req, res) => {
             email: findUser?.email,
             phoneNumber: findUser?.phoneNumber,
             token: generateToken(findUser?._id)
+        });
+        
+    } else {
+        throw new Error('Invalid credentials!');
+    } 
+});
+
+const adminLogin = asyncHandler(async(req, res) => {
+    const { email, password} = req.body;
+    const findAdmin = await user.findOne({ email });
+
+    if (findAdmin.role !== 'admin') {
+        throw new Error('Not Authorized!');
+    }
+
+    if (findAdmin && await findAdmin.isPasswordMatched(password)) {
+        const refreshToken = generateRefreshToken(findAdmin?.id);
+        const updateUser = await user.findByIdAndUpdate(findAdmin?.id, {
+            refreshToken: refreshToken
+        }, {new: true});
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: 24*60*60*1000
+        });
+        res.json({
+            _id: findAdmin?._id,
+            firstName: findAdmin?.firstName,
+            lastName: findAdmin?.lastName,
+            email: findAdmin?.email,
+            phoneNumber: findAdmin?.phoneNumber,
+            token: generateToken(findAdmin?._id)
         });
         
     } else {
@@ -217,8 +250,88 @@ const resetPassword = asyncHandler(async(req, res) => {
     res.json(User);
 });
 
+const getWishList = asyncHandler(async (req, res) => {
+    const { id } = req.user;
+    try {
+        const findUser = await user.findById(id).populate('wishList');
+        res.json(findUser);
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+const saveAddress = asyncHandler(async (req, res, next) => {
+    const { _id } = req.user;
+    validateMongoDbId(_id);
+  
+    try {
+      const updatedUser = await user.findByIdAndUpdate(
+        _id,
+        {
+          address: req?.body?.address,
+        },
+        {
+          new: true,
+        }
+      );
+      res.json(updatedUser);
+    } catch (error) {
+      throw new Error(error);
+    }
+  });
+
+const userCart = asyncHandler(async (req, res) => {
+    const { cart } = req.body;
+    const { _id } = req.user;
+    validateMongoDbId(_id);
+
+    try {
+        let products = [];
+        const User = await user.findById(_id);
+        // check if user already have product in cart
+        const alreadyExist = await Cart.findOne({orderby: User._id});
+        if (alreadyExist) {
+            alreadyExist.remove();
+        }
+        for (let i=0; i<cart.length; i++) {
+            let objects = {};
+            objects.product = cart[i]._id;
+            objects.count = cart[i].count;
+            objects.color = cart[i].color;
+            let getPrice = await Product.findById(cart[i]._id).select("price").exec();
+            objects.price = getPrice.price;
+            products.push(objects);
+        }
+        let cartTotal = 0;
+        for (let i=0; i<products.length; i++) {
+            cartTotal = cartTotal + products[i].price*products[i].count;
+        }
+
+        let newCart = await new Cart({
+            products,
+            cartTotal,
+            orderby: user?._id
+        }).save();
+        res.json(newCart);
+
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+const getCart = asyncHandler(async (req, res) => {
+    const {_id} = req.user;
+    validateMongoDbId(_id);
+    try {
+        const cart = await Cart.findOne({orderby: _id});
+        res.json(cart);
+    } catch (error) {
+        throw new Error(error);
+    }
+});
 
 module.exports = { createUser, loginUserCotroller, getAllUser, 
     getAUser, deleteAUser, updateAUser, blockUser, unblockUser,
     handleRefreshToken, logout, updatePassword, forgotPasswordToken,
-    resetPassword}
+    adminLogin, resetPassword, getWishList, saveAddress, userCart,
+    getCart}
