@@ -448,26 +448,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     }
 });
 
-let { PythonShell } = require("python-shell")
-const getRecommendations = asyncHandler(async (req, res) => {
-    try {
-        const scriptPath = '../hmart_ecommerce/recommender_model/test.py';
-        console.log(scriptPath);
-        PythonShell.run(scriptPath).then(results => {
-            console.log('finished')
-            res.json({ recommendations: JSON.parse(results) });
-        })
-        ;
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
 
 
 module.exports = { createUser, loginUserCotroller, getAllUser, 
     getAUser, deleteAUser, updateAUser, blockUser, unblockUser,
     handleRefreshToken, logout, updatePassword, forgotPasswordToken,
     adminLogin, resetPassword, getWishList, saveAddress, userCart,
-    getCart, emptyCart, applyCoupon, createOrder, getOrders, updateOrderStatus,
-    getRecommendations}
+    getCart, emptyCart, applyCoupon, createOrder, getOrders, updateOrderStatus}

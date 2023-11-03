@@ -3,6 +3,7 @@ const User = require("../models/userModel")
 const asyncHandler = require("express-async-handler")
 const slugify = require("slugify");
 const validateMongoDbId = require("../utils/validateMongodbId");
+const axios = require("axios")
 
 const createProduct = asyncHandler(async(req, res) => {
     try {
@@ -205,6 +206,35 @@ const rating = asyncHandler(async (req, res) => {
     }
 });
 
+const getProductRecommenders = asyncHandler(async(req, res) => {
+    const { _id } = req.user;
+    const findUser = await User.findById(_id);
+    if (!findUser) {
+        throw new Error("User doesnot exist!");
+    }
+    try {
+        const products_rec = await axios.get(`http://localhost:8888/recommenders/${_id}}`);
+        const product_id = products_rec.data;
+
+        // Check if product_id is an array, and if it has elements
+        if (Array.isArray(product_id) && product_id.length > 0) {
+            const product = await Product.findById(product_id[0]);
+            if (!product) {
+                return res.status(404).json({
+                    message: "Product not found!"
+                });
+            }
+            res.json(product);
+        } else {
+            return res.status(404).json({
+                message: "No product recommendations found!"
+            });
+        }
+    } catch (error) {
+        res.status(500).json({message: 'Recommenders Internal Server Error'})
+    }
+});
+
 
 module.exports = { createProduct, getProduct, getAllProduct, updateProduct,
-    deleteProduct, addToWishList, rating }
+    deleteProduct, addToWishList, rating, getProductRecommenders }
