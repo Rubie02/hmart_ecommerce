@@ -214,14 +214,15 @@ const getProductRecommenders = asyncHandler(async(req, res) => {
     }
     try {
         const products_rec = await axios.get(`http://localhost:8888/recommenders/${_id}}`);
-        const product_id = products_rec.data;
-
-        // Check if product_id is an array, and if it has elements
-        if (Array.isArray(product_id) && product_id.length > 0) {
-            const product = await Product.findById(product_id[0]);
+        const product_data = products_rec.data;
+        console.log(product_data)
+        const product_ids = product_data.map(item => item[0]);
+        console.log(product_ids)
+        if (Array.isArray(product_ids) && product_ids.length > 0) {
+            const product = await Product.findById(product_ids);
             if (!product) {
                 return res.status(404).json({
-                    message: "Product not found!"
+                    message: "Products not found!"
                 });
             }
             res.json(product);
