@@ -46,7 +46,7 @@ const loginUserCotroller = asyncHandler(async(req, res) => {
             lastName: findUser?.lastName,
             email: findUser?.email,
             phoneNumber: findUser?.phoneNumber,
-            token: generateToken(findUser?._id)
+            accessToken: generateToken(findUser?._id)
         });
         
     } else {
